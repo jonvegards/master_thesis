@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-"""Script for training a BDT to predict NLO cross sections
+"""Example script for training a BDT to predict NLO cross sections
 for gluino pair production and plotting the resulting precision.
 
 @ Jon Vegard Sparre 2018 <jonvsp@fys.uio.no>
@@ -33,7 +33,7 @@ print(outpref + 'Numpy version ' + np.__version__)
 ####################################################################
 
 # Read in data (last column is BS)
-files = ["MSSM_lin_MASS_allsquarks.dat","MSSM_log_MASS_allsquarks.dat"]
+files = ["~/Jottacloud/data_for_bdt/MSSM_lin_MASS_allsquarks.dat","~/Jottacloud/data_for_bdt/MSSM_log_MASS_allsquarks.dat"]
 
 # Define list with features for MASS dataset
 feature_list = ["3.mGluino","4.mdL","5.mdR","6.muL","7.muR","8.msL","9.msR","10.mcL","11.mcR"]
@@ -44,21 +44,21 @@ drop_col = 'Unnamed: 15'
 features, target, features_test_M, target_test_M = ReadData(files, feature_list, target_list, drop_col, eps=1E-9, squark_mean=False, train_test=True)
 
 # Set file suffix:
-suffix       = "LS loss"
+suffix       = "LS_loss"
 # Where to save plots
 directory       = "plots/"
 
 ####################################################################
 
 # Load saved model if it exist
-# reg          = joblib.load('BDT_MASS_replace_MSSM_LS_100leaves_without_betasquark_compare.pkl')
+# reg          = joblib.load('BDT_LS_loss.pkl')
 
 ####################################################################
 
 if not os.path.exists(directory):
     os.makedirs(directory)
 
-params = {'learning_rate': 0.01, 'loss': 'ls', 'max_depth': 13, 'n_estimators': 500,
+params = {'learning_rate': 0.01, 'loss': 'ls', 'max_depth': 13, 'n_estimators': 5000,
           'random_state': 42, 'subsample': 0.5, 'verbose':1, 'max_leaf_nodes': 100}
 
 reg = ensemble.GradientBoostingRegressor(**params)
@@ -75,7 +75,7 @@ predicted_ls    = reg.predict(features_test)
 print('It took {0:.2f}s to predict {1} samples with LS loss'.format(time.time()-start_time, len(target_test)))
 
 ####################################################################
-#               Inspecting precision of model                      #
+#                       Inspection of model                        #
 ####################################################################
 
 # Printing R^2 score
