@@ -1,17 +1,10 @@
 #!/usr/bin/env python2
 
+"""Plotting functions for plotting performance of BDT
+
+2018, Jon Vegard Sparre <jonvsp@fys.uio.no>
 """
 
-..  module:: plotting_functions
-    :platform: OS X
-
-
-.. moduleauthor:: Are Raklev
-.. moduleauthor:: Jon Vegard Sparre <jonvsp@fys.uio.no>
-
-Plotting functions for plotting performance of BDT
-"""
-# print(__doc__)
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.axes as ax
@@ -19,7 +12,6 @@ import matplotlib.ticker as ticker
 params = {'text.usetex': False, 'mathtext.fontset': 'stixsans'}
 plt.rcParams.update(**params)
 # Setting plot style
-# plt.style.use('ggplot')
 plt.rcParams['font.family'] = 'sans-serif'
 
 def IntervalError(target_test, predicted, directory, suffix, offset=0):
@@ -50,7 +42,6 @@ def IntervalError(target_test, predicted, directory, suffix, offset=0):
     start       = int(min(target_test))-1 # Ensure that smallest xsec is included
     stop        = int(max(target_test))+1 # Ensure that largest xsec is included
 
-    # for i in range(stop,start,-1):
     for i in range(start,stop):    
         intervals.append([i,i+1])
     
@@ -59,7 +50,6 @@ def IntervalError(target_test, predicted, directory, suffix, offset=0):
     rel_deviance_list = []
     mean_list         = []
     std_list          = []
-    mse_list          = []
     no_points         = []
     # Loop over all intervals
     for i in range(0,len(intervals)):
@@ -71,7 +61,6 @@ def IntervalError(target_test, predicted, directory, suffix, offset=0):
             x_true       = np.power(10,target_test[index])
             x_BDT        = np.power(10,predicted[index])
             rel_deviance = (x_BDT-x_true)/(x_true)
-            # mse_list.append(np.mean((predicted[index]-target_test[index])**2))
             # Adding values to list
             rel_dev_mean = np.mean(rel_deviance)
             rel_dev_std  = np.std(rel_deviance)
@@ -82,26 +71,20 @@ def IntervalError(target_test, predicted, directory, suffix, offset=0):
             no_points.append(len(rel_deviance))
     print('Interval: Mean rel. deviance')
     print('\n'.join('{0:9}: {1:.6f}'.format(str(i[1]),i[0]) for k, i in enumerate(zip(mean_list,labelliste))))
-    # print('Interval: MSE')
-    # print('\n'.join('{0:9}: {1:.6f}'.format(str(i[1]),i[0]) for k, i in enumerate(zip(mse_list,labelliste))))
-    # print('Interval: Std rel. deviance')
-    # print('\n'.join('{0:9}: {1:.6f}'.format(str(i[1]),i[0]) for k, i in enumerate(zip(std_list,intervals))))
-    # print('Interval: No. of samples')
-    # print('\n'.join('{0:9}: {1}'.format(str(i[1]),i[0]) for k, i in enumerate(zip(no_points,labelliste))))
-    # print(sum(no_points))
+    print('Interval: Std rel. deviance')
+    print('\n'.join('{0:9}: {1:.6f}'.format(str(i[1]),i[0]) for k, i in enumerate(zip(std_list,intervals))))
+    print('Interval: No. of samples')
+    print('\n'.join('{0:9}: {1}'.format(str(i[1]),i[0]) for k, i in enumerate(zip(no_points,labelliste))))
     
-    # Consider changing first element in labelliste to sth. like "xsec = 0" to point out the difference
+    # Changing first element of labellist to point out that these are the xsec=0 samples
     labelliste[0] = r'$\sigma$ = 0'
     # Plotting mean error scatter plot with std error as error bars as function of decades
-    plt.axvline(7-0.2, ls='--', c='C4') # Vertical line at 0.01fb
+    plt.axvline(7-0.2, ls='--', c='C4') # Vertical line at N=0.02 events.
     plt.errorbar(np.arange(len(mean_list))+offset, mean_list, yerr=std_list, fmt='o', label=suffix, markersize=4)
     plt.ylim(-.4,.401)
-    # plt.yticks(size=20)
-    # plt.yticks(np.arange(-.4,.401,0.2), np.arange(-.4,.401,0.2),size=20)
     plt.xticks(np.arange(len(mean_list)), labelliste, rotation='vertical')
     plt.ylabel(r'$\bar\epsilon$',size=20)
     plt.xlabel(r'$\log_{10}(\sigma/\sigma_0),\quad \sigma_0=1$ fb',size=15)
-    # plt.title(r'Model: MASS ($\alpha = 0.7$)')
     plt.tight_layout(pad=2.)
     plt.legend(loc='upper right')
     plt.grid('on')
@@ -126,49 +109,37 @@ def TrainingDeviance(reg, target_test, features_test, suffix, directory, comp=Fa
 
     '''
     
-    # index = target_test > 1.#0.01
     # Compute test set deviance
     params = reg.get_params()
     test_score = np.zeros( (params['n_estimators'],) )
     for i, y_pred in enumerate( reg.staged_predict(features_test) ):
-        test_score[i] = reg.loss_(target_test, y_pred) #filtrer ut xsec < 0.01 fb
+        test_score[i] = reg.loss_(target_test, y_pred)
 
     if params['loss'] == 'ls':
-    # if suffix == "Physical masses":
         train_score = reg.train_score_
         color1 = '-C0'
         color2 = '--C0'
-        if comp == True:
-            color1 = '-C1'
-            color2 = '--C1'
     elif params['loss'] == 'lad':
-    # elif suffix == "Physical masses and expressions":
+        # Squaring the linear loss before plotting it
+        # as discussed in the thesis.
         train_score = reg.train_score_**2
         test_score  = test_score**2
         color1 = '-C1'
         color2 = '--C1'
     elif params['loss'] == 'huber':
-    # elif suffix == "Lagrangian parameters":
+        # Multiplying Huber loss by two
+        # as discussed in thesis
         train_score = reg.train_score_*2
         test_score  = test_score*2
         color1 = '-C2'
         color2 = '--C2'
-    elif params['loss'] == 'quantile':
-        train_score = reg.train_score_
-        test_score  = test_score
-        color1 = '-C3'
-        color2 = '--C3'
-    # Plot
-    # plt.title('Deviance')
+    # Plotting
     plt.plot(np.arange(params['n_estimators']) + 1, train_score, color1,
              label='{}'.format(suffix))
     plt.plot(np.arange(params['n_estimators']) + 1, test_score, color2,
              label='{}'.format(suffix))
     plt.legend(loc='upper right')
     plt.xlabel('Boosting Iterations')
-    # plt.yticks(fontsize=20)
-    # plt.xticks(fontsize=20)
-    # plt.ylabel('Deviance')
     plt.yscale('log')
     plt.tight_layout(pad=2.)
     plt.savefig(directory + 'deviance.pdf')
@@ -189,7 +160,6 @@ def PlotVariableImportance(reg, feature_list, suffix, directory):
     :type directory: str
     '''
     plt.clf()
-    # Plot feature importance
     feature_importance = reg.feature_importances_
     # Scale importances relative to total
     feature_importance = 100.0 * (feature_importance / feature_importance.sum())
@@ -201,7 +171,6 @@ def PlotVariableImportance(reg, feature_list, suffix, directory):
     ax.barh(pos, feature_importance[sorted_importance], align='center')
     plt.yticks(pos, feature_list[sorted_importance],size=18)
     plt.xlabel('Relative Importance')
-    # plt.title('Variable Importance, model: {}'.format(suffix))
     plt.savefig(directory + 'variable_importance'+suffix+'.pdf')
     return 0
 
@@ -222,42 +191,3 @@ def ErrorDistribution(target, predicted, directory, suffix):
     plt.ylabel('Normed to 1', size=20)
     plt.tight_layout(pad=1.)
     plt.savefig(directory + 'error_dist'+ suffix + '.pdf')
-
-# def ErrorPlot():
-#     '''
-#     Plot relative error between BDT and test data.
-#     !!!
-#     Reduce number of points plotted to get a smaller pdf
-#     -> find out how to pick uniformly random values from predicted and target_test:
-#     --> first try: just use half of predicted/target_test, they should be uniformly
-#     distributed themselves -- doesn't work
-#     --> using np.random.randint to get an array with 5000 samples to plot
-#     !!!
-#     '''
-#     plt.figure(1)
-#     N_ = len(predicted)
-#     N = np.random.randint(0, high=N_, size=5000)
-#     error      = (predicted[N] - target_test[N])/(target_test[N]+eps2)
-#     # error      = (np.power(10.,predicted) - target_test) / target_test
-#     fig, ax = plt.subplots()
-#     ax.scatter(error, target_test[N], c=np.random.random(3),alpha=.7, lw=0, s=15)
-#     ax.set_title("\n".join(textwrap.wrap('lin_MASS with params = {}'.format(params), 80)), size=11)
-#     plt.xlabel('$(x_{BDT} - x_{true})/x_{true}$')
-#     plt.ylabel('targets')
-#     fig.savefig(directory + 'rel_error_' + suffix + '.pdf')
-#     # plt.show()
-#     return 0
-
-# def PlotResults():
-#     '''
-#     Plot results from BDT, M3-mass vs. NLO xsec
-#     '''
-#     plt.figure(2)
-#     fig, ax = plt.subplots()
-#     ax.scatter(features_test[:,0], predicted, c=np.random.random(3),alpha=.7, lw=0)
-#     plt.subplots_adjust(top=.84)
-#     plt.xlabel('$\mathrm{Gluino}$')
-#     plt.ylabel('$gg_{NLO}$ [log]')
-#     ax.set_title("\n".join(textwrap.wrap('All data from newdata/ with params = {}'.format(params), 80)),size=11)
-#     fig.savefig(directory + 'xsec_mass_' + suffix + '.pdf')
-#     return 0

@@ -41,7 +41,7 @@ target_list  = ["2.gg_NLO"]
 # The data files *_MASS.txt contains a column with NaNs, this must be removed
 drop_col = 'Unnamed: 15'
 
-features, target, features_test_M, target_test_M = ReadData(files, feature_list, target_list, drop_col, eps=1E-9, squark_mean=False, train_test=True)
+features, target, features_test, target_test = ReadData(files, feature_list, target_list, drop_col, eps=1E-9, squark_mean=True, train_test=True)
 
 # Set file suffix:
 suffix       = "LS_loss"
@@ -62,27 +62,27 @@ params = {'learning_rate': 0.01, 'loss': 'ls', 'max_depth': 13, 'n_estimators': 
           'random_state': 42, 'subsample': 0.5, 'verbose':1, 'max_leaf_nodes': 100}
 
 reg = ensemble.GradientBoostingRegressor(**params)
-print(reg.get_params)
+print(outpref +'{}'.format(reg.get_params))
 
 # Fit to data
 reg.fit(features, target)
 
 # Save model
-joblib.dump(reg, directory + 'BDT_' + suffix + '.pkl')
+# joblib.dump(reg, directory + 'BDT_' + suffix + '.pkl')
 
 start_time = time.time()
-predicted_ls    = reg.predict(features_test)
-print('It took {0:.2f}s to predict {1} samples with LS loss'.format(time.time()-start_time, len(target_test)))
+predicted    = reg.predict(features_test)
+print('It took {0:.2f}s to predict {1} samples with {2}'.format(time.time()-start_time, len(target_test), suffix))
 
 ####################################################################
 #                       Inspection of model                        #
 ####################################################################
 
 # Printing R^2 score
-print("R^2-score {}: {}".format(suffix, reg.score(features_test,target_test)))
+print(outpref + "R^2-score for model with {}: {}".format(suffix, reg.score(features_test,target_test)))
 
 # Plot mean relative deviance for all loss functions in one figure
-IntervalError(target_test, predicted_ls, directory, suffix)
+IntervalError(target_test, predicted, directory, suffix)
 
 # Plot test and training set deviance as function of boosting iterations
 plt.clf()

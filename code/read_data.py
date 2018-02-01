@@ -12,6 +12,8 @@ import textwrap, sys
 
 outpref = sys.argv[0] + ' : '
 
+eps2 = .01
+
 def ReadData(filenames, feature_list, target_list, drop_col=None, train_test=False, samples=10000, eps=1E-9, squark_mean=False):
     """ Function for reading in test data to BDT model.
 
@@ -44,6 +46,7 @@ def ReadData(filenames, feature_list, target_list, drop_col=None, train_test=Fal
         df     = pd.DataFrame(data)
         df_new = df.drop(drop_col, axis=1) # Drop BS column
         # Removing outliers (i.e. samples with too large masses)
+        # based on what we saw in quality check plots
         for particle in feature_list:
             df_new = df_new[df_new[particle] < 4100]
         dataframes.append(df_new)
